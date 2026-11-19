@@ -23,37 +23,41 @@ fun RallyApp(onSyncNow: () -> Unit) {
     val navBackStackEntry = navController.currentBackStackEntryFlow.collectAsState(initial = null).value
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val isTopLevelScreen = currentRoute in listOf("overview", "accounts", "bills")
+
     Scaffold(
         containerColor = RallyBackground,
         bottomBar = {
-            NavigationBar(containerColor = RallyCard) {
-                val tabs = listOf(
-                    Triple("overview", stringResource(R.string.overview), Icons.Default.Home),
-                    Triple("accounts", stringResource(R.string.accounts), Icons.Default.AccountBalance),
-                    Triple("bills", stringResource(R.string.bills), Icons.AutoMirrored.Filled.ReceiptLong)
-                )
-                tabs.forEach { (route, label, icon) ->
-                    NavigationBarItem(
-                        selected = currentRoute == route,
-                        onClick = {
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(icon, contentDescription = label) },
-                        label = { Text(label) },
-                        colors = NavigationBarItemDefaults.colors(
-                            unselectedIconColor = Color.Gray,
-                            selectedIconColor = RallyGreen,
-                            unselectedTextColor = Color.Gray,
-                            selectedTextColor = Color.White,
-                            indicatorColor = RallyGreen.copy(alpha = 0.2f)
-                        )
+            if (isTopLevelScreen) {
+                NavigationBar(containerColor = RallyCard) {
+                    val tabs = listOf(
+                        Triple("overview", stringResource(R.string.overview), Icons.Default.Home),
+                        Triple("accounts", stringResource(R.string.accounts), Icons.Default.AccountBalance),
+                        Triple("bills", stringResource(R.string.bills), Icons.AutoMirrored.Filled.ReceiptLong)
                     )
+                    tabs.forEach { (route, label, icon) ->
+                        NavigationBarItem(
+                            selected = currentRoute == route,
+                            onClick = {
+                                navController.navigate(route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(icon, contentDescription = label) },
+                            label = { Text(label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                unselectedIconColor = Color.Gray,
+                                selectedIconColor = RallyGreen,
+                                unselectedTextColor = Color.Gray,
+                                selectedTextColor = Color.White,
+                                indicatorColor = RallyGreen.copy(alpha = 0.2f)
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -67,16 +71,37 @@ fun RallyApp(onSyncNow: () -> Unit) {
                 OverviewScreen(
                     onNavigateToAccounts = { navController.navigate("accounts") },
                     onNavigateToBills = { navController.navigate("bills") },
-                    onSyncNow = onSyncNow
+                    onSyncNow = onSyncNow,
+                    onAccountClick = { name -> navController.navigate("account_detail/$name") },
+                    onBillClick = { name -> navController.navigate("bill_detail/$name") }
                 )
             }
             composable("accounts") {
-                AccountsScreen()
+                AccountsScreen(
+                    onAccountClick = { name -> navController.navigate("account_detail/$name") }
+                )
             }
             composable("bills") {
-                BillsScreen()
+                BillsScreen(
+                    onBillClick = { name -> navController.navigate("bill_detail/$name") }
+                )
+            }
+            composable("account_detail/{accountName}") { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("accountName")
+                AccountDetailScreen(
+                    accountName = name,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+            composable("bill_detail/{billName}") { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("billName")
+                BillDetailScreen(
+                    billName = name,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     }
 }
+
 

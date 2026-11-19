@@ -29,4 +29,14 @@ object RallyRepository {
         _copRate.value = rate
         _lastSyncTime.value = time
     }
+
+    fun getAccount(name: String?): Account? {
+        if (name.isNullOrEmpty()) return null
+        return accounts.find { it.name.equals(name, ignoreCase = true) }
+    }
+
+    fun getBill(name: String?): Bill? {
+        if (name.isNullOrEmpty()) return null
+        return bills.find { it.name.equals(name, ignoreCase = true) }
+    }
 }

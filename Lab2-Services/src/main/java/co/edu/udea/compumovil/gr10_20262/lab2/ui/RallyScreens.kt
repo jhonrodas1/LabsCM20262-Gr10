@@ -2,11 +2,13 @@ package co.edu.udea.compumovil.gr10_20262.lab2.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -74,7 +76,9 @@ fun RallyAnimatedCircle(
 fun OverviewScreen(
     onNavigateToAccounts: () -> Unit,
     onNavigateToBills: () -> Unit,
-    onSyncNow: () -> Unit
+    onSyncNow: () -> Unit,
+    onAccountClick: (String) -> Unit = {},
+    onBillClick: (String) -> Unit = {}
 ) {
     val copRate by RallyRepository.copRate.collectAsState()
     val lastSync by RallyRepository.lastSyncTime.collectAsState()
@@ -167,7 +171,13 @@ fun OverviewScreen(
                 title = stringResource(R.string.accounts),
                 amountUsd = totalAccountsUsd,
                 rate = copRate,
-                onSeeAllClick = onNavigateToAccounts
+                onSeeAllClick = onNavigateToAccounts,
+                itemsContent = {
+                    RallyRepository.accounts.take(2).forEach { account ->
+                        AccountRow(account = account, rate = copRate, onClick = { onAccountClick(account.name) })
+                        HorizontalDivider(color = RallyBackground, thickness = 1.dp)
+                    }
+                }
             )
         }
 
@@ -176,7 +186,13 @@ fun OverviewScreen(
                 title = stringResource(R.string.bills),
                 amountUsd = totalBillsUsd,
                 rate = copRate,
-                onSeeAllClick = onNavigateToBills
+                onSeeAllClick = onNavigateToBills,
+                itemsContent = {
+                    RallyRepository.bills.take(2).forEach { bill ->
+                        BillRow(bill = bill, rate = copRate, onClick = { onBillClick(bill.name) })
+                        HorizontalDivider(color = RallyBackground, thickness = 1.dp)
+                    }
+                }
             )
         }
     }
@@ -187,7 +203,8 @@ fun OverviewSummaryCard(
     title: String,
     amountUsd: Float,
     rate: Double,
-    onSeeAllClick: () -> Unit
+    onSeeAllClick: () -> Unit,
+    itemsContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -223,12 +240,17 @@ fun OverviewSummaryCard(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium
             )
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = RallyBackground, thickness = 1.dp)
+            itemsContent()
         }
     }
 }
 
 @Composable
-fun AccountsScreen() {
+fun AccountsScreen(
+    onAccountClick: (String) -> Unit = {}
+) {
     val copRate by RallyRepository.copRate.collectAsState()
     val amounts = RallyRepository.accounts.map { it.balance }
     val totalAccountsUsd = amounts.sum()
@@ -248,7 +270,7 @@ fun AccountsScreen() {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
             items(RallyRepository.accounts) { account ->
-                AccountRow(account, copRate)
+                AccountRow(account = account, rate = copRate, onClick = { onAccountClick(account.name) })
                 HorizontalDivider(color = RallyCard, thickness = 1.dp)
             }
         }
@@ -256,7 +278,9 @@ fun AccountsScreen() {
 }
 
 @Composable
-fun BillsScreen() {
+fun BillsScreen(
+    onBillClick: (String) -> Unit = {}
+) {
     val copRate by RallyRepository.copRate.collectAsState()
     val amounts = RallyRepository.bills.map { it.amount }
     val totalBillsUsd = amounts.sum()
@@ -276,7 +300,7 @@ fun BillsScreen() {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
             items(RallyRepository.bills) { bill ->
-                BillRow(bill, copRate)
+                BillRow(bill = bill, rate = copRate, onClick = { onBillClick(bill.name) })
                 HorizontalDivider(color = RallyCard, thickness = 1.dp)
             }
         }
@@ -342,10 +366,11 @@ fun TotalHeader(
 }
 
 @Composable
-fun AccountRow(account: Account, rate: Double) {
+fun AccountRow(account: Account, rate: Double, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -397,10 +422,11 @@ fun AccountRow(account: Account, rate: Double) {
 }
 
 @Composable
-fun BillRow(bill: Bill, rate: Double) {
+fun BillRow(bill: Bill, rate: Double, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -451,6 +477,377 @@ fun BillRow(bill: Bill, rate: Double) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AccountDetailScreen(
+    accountName: String?,
+    onBackClick: () -> Unit
+) {
+    val copRate by RallyRepository.copRate.collectAsState()
+    val account = remember(accountName) { RallyRepository.getAccount(accountName) }
+
+    Scaffold(
+        containerColor = RallyBackground,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = account?.name ?: stringResource(R.string.account_details),
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = RallyBackground)
+            )
+        }
+    ) { innerPadding ->
+        if (account == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Cuenta no encontrada", color = Color.Gray)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = RallyCard)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(6.dp)
+                                    .height(50.dp)
+                                    .background(Color(account.colorHex), shape = RoundedCornerShape(3.dp))
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = account.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = stringResource(R.string.account_mask, account.number),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = RallyCard)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.balance_usd),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = formatUsd(account.balance),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HorizontalDivider(color = RallyBackground, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.balance_cop),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = formatCop(account.balance, copRate),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = RallyGreen
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = RallyCard)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.account_details),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            HorizontalDivider(color = RallyBackground, thickness = 1.dp)
+                            DetailRow(label = stringResource(R.string.account_number), value = "•••• ${account.number}")
+                            DetailRow(label = stringResource(R.string.status), value = stringResource(R.string.active), valueColor = RallyGreen)
+                            DetailRow(label = stringResource(R.string.exchange_rate), value = formatExchangeRate(copRate))
+                        }
+                    }
+                }
+
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = RallyCard)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.recent_activity),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            HorizontalDivider(color = RallyBackground, thickness = 1.dp)
+                            ActivityRow(title = "Supermercado", date = "Ayer", amount = "-$45.20 USD")
+                            ActivityRow(title = "Depósito de nómina", date = "Hace 3 días", amount = "+$1,200.00 USD", isCredit = true)
+                            ActivityRow(title = "Cafetería", date = "Hace 5 días", amount = "-$4.50 USD")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BillDetailScreen(
+    billName: String?,
+    onBackClick: () -> Unit
+) {
+    val copRate by RallyRepository.copRate.collectAsState()
+    val bill = remember(billName) { RallyRepository.getBill(billName) }
+
+    Scaffold(
+        containerColor = RallyBackground,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = bill?.name ?: stringResource(R.string.bill_details),
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = RallyBackground)
+            )
+        }
+    ) { innerPadding ->
+        if (bill == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Factura no encontrada", color = Color.Gray)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = RallyCard)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(6.dp)
+                                    .height(50.dp)
+                                    .background(Color(bill.colorHex), shape = RoundedCornerShape(3.dp))
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = bill.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "${stringResource(R.string.due)} ${bill.due}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = RallyCard)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.balance_usd),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = formatUsd(bill.amount),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HorizontalDivider(color = RallyBackground, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.balance_cop),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = formatCop(bill.amount, copRate),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = RallyGreen
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = RallyCard)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.bill_details),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            HorizontalDivider(color = RallyBackground, thickness = 1.dp)
+                            DetailRow(label = stringResource(R.string.due_date), value = bill.due)
+                            DetailRow(label = stringResource(R.string.status), value = stringResource(R.string.pending), valueColor = RallyOrange)
+                            DetailRow(label = stringResource(R.string.exchange_rate), value = formatExchangeRate(copRate))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailRow(label: String, value: String, valueColor: Color = Color.White) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text(text = value, style = MaterialTheme.typography.bodyLarge, color = valueColor, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+fun ActivityRow(title: String, date: String, amount: String, isCredit: Boolean = false) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.bodyMedium, color = Color.White)
+            Text(text = date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        }
+        Text(
+            text = amount,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (isCredit) RallyGreen else Color.White,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
 @Preview
 @Composable
 fun OverviewScreenPreview() {
@@ -468,4 +865,17 @@ fun AccountsScreenPreview() {
 fun BillsScreenPreview() {
     BillsScreen()
 }
+
+@Preview
+@Composable
+fun AccountDetailScreenPreview() {
+    AccountDetailScreen(accountName = "Checking", onBackClick = {})
+}
+
+@Preview
+@Composable
+fun BillDetailScreenPreview() {
+    BillDetailScreen(billName = "Rent", onBackClick = {})
+}
+
 

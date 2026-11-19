@@ -12,4 +12,15 @@
     <string name="exchange_rate_format">1 USD = %1$s COP</string>
     <string name="last_sync_format">%1$s: %2$s</string>
     <string name="account_mask">•\u2022\u2022\u2022%1$s</string>
+    <string name="account_details">Detalle de Cuenta</string>
+    <string name="bill_details">Detalle de Factura</string>
+    <string name="back">Atrás</string>
+    <string name="account_number">Número de Cuenta</string>
+    <string name="balance_usd">Saldo (USD)</string>
+    <string name="balance_cop">Saldo equivalente (COP)</string>
+    <string name="status">Estado</string>
+    <string name="active">Activa</string>
+    <string name="pending">Pago Pendiente</string>
+    <string name="due_date">Fecha de Vencimiento</string>
+    <string name="recent_activity">Actividad Reciente</string>
 </resources>
