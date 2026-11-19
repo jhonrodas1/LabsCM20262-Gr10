@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Rally Finance</string>
+    <string name="overview">Resumen</string>
+    <string name="accounts">Cuentas</string>
+    <string name="bills">Facturas</string>
+    <string name="total">Total</string>
+    <string name="exchange_rate">Tasa de cambio (USD a COP)</string>
+    <string name="last_sync">Última sincronización</string>
+    <string name="sync_now">Sincronizar ahora</string>
+    <string name="see_all">Ver todo</string>
+    <string name="due">Vence</string>
+    <string name="exchange_rate_format">1 USD = %1$s COP</string>
+    <string name="last_sync_format">%1$s: %2$s</string>
+    <string name="account_mask">•\u2022\u2022\u2022%1$s</string>
+</resources>

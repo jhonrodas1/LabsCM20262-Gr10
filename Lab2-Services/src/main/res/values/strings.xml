@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">Labs20262-Gr10</string>
+    <string name="app_name">Rally Finance</string>
+    <string name="overview">Overview</string>
+    <string name="accounts">Accounts</string>
+    <string name="bills">Bills</string>
+    <string name="total">Total</string>
+    <string name="exchange_rate">Exchange Rate (USD to COP)</string>
+    <string name="last_sync">Last sync</string>
+    <string name="sync_now">Sync Now</string>
+    <string name="see_all">See All</string>
+    <string name="due">Due</string>
+    <string name="exchange_rate_format">1 USD = %1$s COP</string>
+    <string name="last_sync_format">%1$s: %2$s</string>
+    <string name="account_mask">•\u2022\u2022\u2022%1$s</string>
 </resources>
