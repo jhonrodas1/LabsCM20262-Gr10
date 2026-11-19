@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import co.edu.udea.compumovil.gr10_20262.lab2.R
 import co.edu.udea.compumovil.gr10_20262.lab2.data.Account
@@ -31,9 +33,17 @@ val RallyCard = Color(0xFF373740)
 val RallyGreen = Color(0xFF1EB980)
 val RallyOrange = Color(0xFFFF6859)
 
-fun formatUsdCop(usd: Float, rate: Double): String {
+fun formatUsd(usd: Float): String {
+    return String.format(Locale.US, "$%,.2f USD", usd)
+}
+
+fun formatCop(usd: Float, rate: Double): String {
     val cop = usd * rate
-    return String.format(Locale.US, "$%,.2f USD  •  $%,.0f COP", usd, cop)
+    return String.format(Locale.US, "$%,.0f COP", cop)
+}
+
+fun formatExchangeRate(rate: Double): String {
+    return String.format(Locale.US, "$%,.2f COP", rate)
 }
 
 @Composable
@@ -77,7 +87,10 @@ fun OverviewScreen(
     val coroutineScope = rememberCoroutineScope()
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().background(RallyBackground).padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(RallyBackground),
+        contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -86,15 +99,19 @@ fun OverviewScreen(
                 colors = CardDefaults.cardColors(containerColor = RallyCard)
             ) {
                 Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                    Text(text = stringResource(R.string.exchange_rate), color = Color.LightGray, style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        text = stringResource(R.string.exchange_rate),
+                        color = Color.LightGray,
+                        style = MaterialTheme.typography.labelMedium
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = stringResource(R.string.exchange_rate_format, copRate),
+                        text = "1 USD = ${formatExchangeRate(copRate)}",
                         color = Color.White,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -106,25 +123,35 @@ fun OverviewScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         if (isSyncing) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = RallyGreen, strokeWidth = 2.dp)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = RallyGreen,
+                                strokeWidth = 2.dp
+                            )
                         } else {
-                            IconButton(onClick = {
-                                isSyncing = true
-                                onSyncNow()
-                                coroutineScope.launch {
-                                    delay(1000)
-                                    isSyncing = false
-                                    showSuccess = true
-                                    delay(2000)
-                                    showSuccess = false
+                            IconButton(
+                                onClick = {
+                                    isSyncing = true
+                                    onSyncNow()
+                                    coroutineScope.launch {
+                                        delay(1000)
+                                        isSyncing = false
+                                        showSuccess = true
+                                        delay(2000)
+                                        showSuccess = false
+                                    }
                                 }
-                            }) {
-                                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.sync_now), tint = RallyGreen)
+                            ) {
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    contentDescription = stringResource(R.string.sync_now),
+                                    tint = RallyGreen
+                                )
                             }
                         }
                     }
                     if (showSuccess) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "✓ Sincronizado / Synced",
                             color = RallyGreen,
@@ -156,7 +183,12 @@ fun OverviewScreen(
 }
 
 @Composable
-fun OverviewSummaryCard(title: String, amountUsd: Float, rate: Double, onSeeAllClick: () -> Unit) {
+fun OverviewSummaryCard(
+    title: String,
+    amountUsd: Float,
+    rate: Double,
+    onSeeAllClick: () -> Unit
+) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = RallyCard)
@@ -167,16 +199,29 @@ fun OverviewSummaryCard(title: String, amountUsd: Float, rate: Double, onSeeAllC
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = title, color = Color.White, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = title,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
                 TextButton(onClick = onSeeAllClick) {
                     Text(text = stringResource(R.string.see_all), color = RallyGreen)
                 }
             }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = formatUsdCop(amountUsd, rate),
+                text = formatUsd(amountUsd),
                 color = Color.White,
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "≈ ${formatCop(amountUsd, rate)}",
+                color = RallyGreen,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
             )
         }
     }
@@ -198,7 +243,10 @@ fun AccountsScreen() {
             proportions = proportions,
             colors = colors
         )
-        LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        ) {
             items(RallyRepository.accounts) { account ->
                 AccountRow(account, copRate)
                 HorizontalDivider(color = RallyCard, thickness = 1.dp)
@@ -223,7 +271,10 @@ fun BillsScreen() {
             proportions = proportions,
             colors = colors
         )
-        LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        ) {
             items(RallyRepository.bills) { bill ->
                 BillRow(bill, copRate)
                 HorizontalDivider(color = RallyCard, thickness = 1.dp)
@@ -240,63 +291,181 @@ fun TotalHeader(
     proportions: List<Float>,
     colors: List<Color>
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium, color = Color.LightGray)
-        Spacer(modifier = Modifier.height(24.dp))
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(200.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.LightGray,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(210.dp)
+        ) {
             RallyAnimatedCircle(proportions, colors, Modifier.fillMaxSize())
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = stringResource(R.string.total), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(horizontal = 24.dp)
+            ) {
                 Text(
-                    text = formatUsdCop(amountUsd, rate),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                    text = stringResource(R.string.total).uppercase(Locale.getDefault()),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = formatUsd(amountUsd),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = formatCop(amountUsd, rate),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = RallyGreen,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
                 )
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
 @Composable
 fun AccountRow(account: Account, rate: Double) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(68.dp).padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Spacer(modifier = Modifier.width(4.dp).fillMaxHeight().background(Color(account.colorHex)))
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = account.name, color = Color.White, style = MaterialTheme.typography.bodyLarge)
-            Text(text = stringResource(R.string.account_mask, account.number), color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
-        }
-        Text(
-            text = formatUsdCop(account.balance, rate),
-            color = Color.White,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .height(36.dp)
+                .background(Color(account.colorHex), shape = RoundedCornerShape(2.dp))
         )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = account.name,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = stringResource(R.string.account_mask, account.number),
+                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = formatUsd(account.balance),
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.End
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = formatCop(account.balance, rate),
+                color = Color.LightGray,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.End
+            )
+        }
     }
 }
 
 @Composable
 fun BillRow(bill: Bill, rate: Double) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(68.dp).padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Spacer(modifier = Modifier.width(4.dp).fillMaxHeight().background(Color(bill.colorHex)))
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = bill.name, color = Color.White, style = MaterialTheme.typography.bodyLarge)
-            Text(text = "${stringResource(R.string.due)} ${bill.due}", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
-        }
-        Text(
-            text = formatUsdCop(bill.amount, rate),
-            color = Color.White,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .height(36.dp)
+                .background(Color(bill.colorHex), shape = RoundedCornerShape(2.dp))
         )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = bill.name,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "${stringResource(R.string.due)} ${bill.due}",
+                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = formatUsd(bill.amount),
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.End
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = formatCop(bill.amount, rate),
+                color = Color.LightGray,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.End
+            )
+        }
     }
 }
+
+@Preview
+@Composable
+fun OverviewScreenPreview() {
+    OverviewScreen(onNavigateToAccounts = {}, onNavigateToBills = {}, onSyncNow = {})
+}
+
+@Preview
+@Composable
+fun AccountsScreenPreview() {
+    AccountsScreen()
+}
+
+@Preview
+@Composable
+fun BillsScreenPreview() {
+    BillsScreen()
+}
+

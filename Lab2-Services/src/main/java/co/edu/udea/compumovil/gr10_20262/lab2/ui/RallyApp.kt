@@ -1,6 +1,10 @@
 package co.edu.udea.compumovil.gr10_20262.lab2.ui
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,11 +28,11 @@ fun RallyApp(onSyncNow: () -> Unit) {
         bottomBar = {
             NavigationBar(containerColor = RallyCard) {
                 val tabs = listOf(
-                    "overview" to stringResource(R.string.overview),
-                    "accounts" to stringResource(R.string.accounts),
-                    "bills" to stringResource(R.string.bills)
+                    Triple("overview", stringResource(R.string.overview), Icons.Default.Home),
+                    Triple("accounts", stringResource(R.string.accounts), Icons.Default.AccountBalance),
+                    Triple("bills", stringResource(R.string.bills), Icons.AutoMirrored.Filled.ReceiptLong)
                 )
-                tabs.forEach { (route, label) ->
+                tabs.forEach { (route, label, icon) ->
                     NavigationBarItem(
                         selected = currentRoute == route,
                         onClick = {
@@ -40,9 +44,11 @@ fun RallyApp(onSyncNow: () -> Unit) {
                                 restoreState = true
                             }
                         },
-                        icon = { }, // Empty icon since Rally uses mostly text, or we leave it empty to focus on labels
+                        icon = { Icon(icon, contentDescription = label) },
                         label = { Text(label) },
                         colors = NavigationBarItemDefaults.colors(
+                            unselectedIconColor = Color.Gray,
+                            selectedIconColor = RallyGreen,
                             unselectedTextColor = Color.Gray,
                             selectedTextColor = Color.White,
                             indicatorColor = RallyGreen.copy(alpha = 0.2f)
@@ -73,3 +79,4 @@ fun RallyApp(onSyncNow: () -> Unit) {
         }
     }
 }
+
